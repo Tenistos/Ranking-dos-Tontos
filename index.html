@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking dos Tontos 2026</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --bg:#121317;
+  --panel:#1b1c21;
+  --panel2:#303136;
+  --row:#3a3b40;
+  --accent:#f3c93c;
+  --text:#f4f4f4;
+  --muted:#b9bbc2;
+  --danger:#a93d3d;
+  --success:#2f7d4a;
+  --border:#4a4b50;
+}
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+header {
+  background:#0f1013;
+  padding:20px 16px;
+  border-bottom:1px solid #25262b;
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+h1 {
+  margin:0;
+  color:var(--accent);
+  text-align:center;
+  font-size:24px;
+}
+
+header p {
+  text-align:center;
+  color:var(--muted);
+  font-size:13px;
+  margin:7px 0 0;
+}
+
+nav {
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+
+button {
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:var(--panel2);
+  color:var(--text);
+  padding:10px 14px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+button.active,
+button.primary {
+  background:var(--accent);
+  color:#111;
+  border-color:var(--accent);
+}
+
+button.danger {
+  background:var(--danger);
+  border-color:var(--danger);
+}
+
+button.success {
+  background:var(--success);
+  border-color:var(--success);
+}
+
+main {
+  max-width:1100px;
+  margin:22px auto;
+  padding:0 16px;
+}
+
+section { display:none; }
+section.active { display:block; }
+
+.card {
+  background:var(--panel);
+  border:1px solid #28292e;
+  border-radius:12px;
+  padding:18px;
+  margin-bottom:18px;
+}
+
+h2 {
+  color:var(--accent);
+  margin-top:0;
+}
+
+.notice {
+  background:#27282d;
+  color:var(--muted);
+  padding:10px 12px;
+  border-radius:8px;
+  margin-bottom:14px;
+}
+
+.grid {
+  display:grid;
+  gap:14px;
+}
+
+.grid.two {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.grid.three {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+label {
+  display:block;
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+input, select {
+  width:100%;
+  background:var(--row);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+
+th {
+  background:var(--panel2);
+  padding:10px;
+}
+
+td {
+  padding:10px;
+  border-bottom:1px solid #2c2d31;
+  text-align:center;
+}
+
+td.player {
+  text-align:left;
+  font-weight:700;
+}
+
+td.points {
+  color:var(--accent);
+  font-weight:800;
+  font-size:18px;
+}
+
+.small {
+  font-size:12px;
+  color:var(--muted);
+}
+
+.hidden {
+  display:none !important;
+}
+
+.actions {
+  display:flex;
+  gap:6px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+
+.rule {
+  display:grid;
+  grid-template-columns:190px 1fr;
+  gap:14px;
+  padding:10px 0;
+  border-bottom:1px solid #2b2c30;
+}
+
+.rule strong {
+  color:var(--accent);
+}
+
+.prize,
+.semifinal {
+  background:var(--row);
+  padding:14px;
+  border-radius:10px;
+  margin:8px 0;
+}
+
+.status {
+  margin-top:12px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+@media(max-width:760px) {
+  .grid.two,.grid.three { grid-template-columns:1fr; }
+  .rule { grid-template-columns:1fr; }
+  table { font-size:12px; }
+  th,td { padding:8px 5px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>RANKING DOS TONTOS 2026</h1>
+  <p>1 set vencido = 1 ponto • ranking congela em 15/11/2026</p>
+
+  <nav>
+    <button data-tab="painel" class="active">Painel</button>
+    <button data-tab="novo-jogo">Lançar jogo</button>
+    <button data-tab="historico">Histórico</button>
+    <button data-tab="finals">Finals</button>
+    <button data-tab="regras">Regras</button>
+    <button data-tab="premiacao">Premiação</button>
+    <button data-tab="admin">Admin</button>
+  </nav>
+</header>
+
+<main>
+
+<section id="painel" class="active">
+  <div class="card">
+    <h2>Ranking</h2>
+    <div class="notice">
+      Classificação: pontos → confronto direto → saldo de sets → saldo de games → games ganhos.
+    </div>
+
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Pos.</th>
+            <th>Jogador</th>
+            <th>Jogos</th>
+            <th>Pontos</th>
+            <th>Sets -</th>
+            <th>Saldo Sets</th>
+            <th>Saldo Games</th>
+            <th>Games +</th>
+          </tr>
+        </thead>
+        <tbody id="rankingBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="novo-jogo">
+  <div class="card">
+    <h2 id="formTitle">Lançar jogo</h2>
+
+    <div class="notice">
+      Qualquer pessoa com o link pode incluir um jogo. Somente o administrador pode editar ou excluir um resultado já lançado.
+    </div>
+
+    <div class="grid two">
+      <div>
+        <label>Data</label>
+        <input type="date" id="gameDate">
+      </div>
+
+      <div>
+        <label>Tipo</label>
+        <select id="gameType">
+          <option value="normal">Jogo normal</option>
+          <option value="wo">W.O.</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Jogador 1</label>
+        <select id="p1"></select>
+      </div>
+
+      <div>
+        <label>Jogador 2</label>
+        <select id="p2"></select>
+      </div>
+    </div>
+
+    <div id="normalFields" style="margin-top:18px">
+      <div class="grid three">
+        <div>
+          <label>1º set — J1</label>
+          <input type="number" min="0" id="s1p1">
+        </div>
+        <div>
+          <label>1º set — J2</label>
+          <input type="number" min="0" id="s1p2">
+        </div>
+        <div></div>
+
+        <div>
+          <label>2º set — J1</label>
+          <input type="number" min="0" id="s2p1">
+        </div>
+        <div>
+          <label>2º set — J2</label>
+          <input type="number" min="0" id="s2p2">
+        </div>
+        <div></div>
+
+        <div>
+          <label>Match Tiebreak — J1</label>
+          <input type="number" min="0" id="tbp1" placeholder="Somente se 1x1">
+        </div>
+        <div>
+          <label>Match Tiebreak — J2</label>
+          <input type="number" min="0" id="tbp2" placeholder="Somente se 1x1">
+        </div>
+      </div>
+
+      <p class="small">
+        O Match Tiebreak vale 1 set, mas seus pontos não entram no saldo de games.
+      </p>
+    </div>
+
+    <div id="woFields" class="grid two hidden" style="margin-top:18px">
+      <div>
+        <label>Quem recebe o W.O.</label>
+        <select id="woWinner"></select>
+      </div>
+
+      <div>
+        <label>Observação</label>
+        <input type="text" id="woNote" placeholder="Ex.: menor disponibilidade de horários">
+      </div>
+    </div>
+
+    <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="primary" onclick="saveGame()">Salvar jogo</button>
+      <button onclick="clearForm()">Limpar</button>
+    </div>
+
+    <div id="saveStatus" class="status"></div>
+  </div>
+</section>
+
+<section id="historico">
+  <div class="card">
+    <h2>Histórico</h2>
+
+    <div style="overflow:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Confronto</th>
+            <th>Resultado</th>
+            <th>Pontos</th>
+            <th id="actionsHeader" class="hidden">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="finals">
+  <div class="card">
+    <h2>Finals</h2>
+    <div class="notice">
+      Os 4 primeiros colocados do ranking em 15/11/2026 avançam ao Finals.
+    </div>
+    <div id="finalsBox"></div>
+  </div>
+</section>
+
+<section id="regras">
+  <div class="card">
+    <h2>Regras</h2>
+
+    <div class="rule"><strong>Sistema</strong><span>Pontos corridos.</span></div>
+    <div class="rule"><strong>Sorteios</strong><span>Sorteios semanais, evitando confrontos repetidos enquanto houver confrontos inéditos.</span></div>
+    <div class="rule"><strong>Prazo</strong><span>15 dias corridos para realizar cada confronto, sem extensão excepcional.</span></div>
+    <div class="rule"><strong>Formato</strong><span>Melhor de 3 sets.</span></div>
+    <div class="rule"><strong>3º set</strong><span>Em caso de 1x1, Match Tiebreak até 10 pontos, com diferença mínima de 2.</span></div>
+    <div class="rule"><strong>Pontuação</strong><span>Cada set vencido vale 1 ponto. 2x0 = 2/0 e 2x1 = 2/1.</span></div>
+    <div class="rule"><strong>W.O.</strong><span>Quem recebe o W.O. soma 1 ponto; quem concede soma 0.</span></div>
+    <div class="rule"><strong>Responsável pelo W.O.</strong><span>Se o jogo não ocorrer em 15 dias, concede o W.O. quem menos disponibilizou horários ou menos colaborou.</span></div>
+    <div class="rule"><strong>Desempate</strong><span>Confronto direto → saldo de sets → saldo de games → games ganhos.</span></div>
+    <div class="rule"><strong>Encerramento</strong><span>Ranking congelado em 15/11/2026.</span></div>
+    <div class="rule"><strong>Finals</strong><span>1º x 4º e 2º x 3º; perdedores disputam 3º lugar e vencedores disputam a final.</span></div>
+  </div>
+</section>
+
+<section id="premiacao">
+  <div class="card">
+    <h2>Premiação</h2>
+    <div class="prize"><b>1º lugar</b> — 5 espetinhos</div>
+    <div class="prize"><b>2º lugar</b> — 3 espetinhos</div>
+    <div class="prize"><b>3º lugar</b> — 1 espetinho</div>
+  </div>
+</section>
+
+<section id="admin">
+  <div class="card" style="max-width:480px;margin:auto">
+    <h2>Administração</h2>
+
+    <div class="notice">
+      O login serve apenas para editar ou excluir jogos. O administrador também pode cadastrar normalmente.
+    </div>
+
+    <div id="loggedOut">
+      <label>E-mail</label>
+      <input type="email" id="email">
+
+      <label style="margin-top:12px">Senha</label>
+      <input type="password" id="password">
+
+      <button class="primary" style="margin-top:14px" onclick="login()">Entrar</button>
+    </div>
+
+    <div id="loggedIn" class="hidden">
+      <p>Logado como <b id="userEmail"></b>.</p>
+      <button onclick="logout()">Sair</button>
+    </div>
+
+    <div id="authStatus" class="status"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const PLAYERS = ["ART","AMA","ZÉF","ZÉB","OTA","PED","REY"];
+
+const supabaseClient = window.supabase.createClient(
+  "https://acbsujltlqejkkqdtime.supabase.co",
+  "sb_publishable_H_sPMViWXZQ19wrQF42oBg_b-OrXo_e"
+);
+
+let games = [];
+let currentUser = null;
+let editingId = null;
+
+const rankingBody = document.getElementById("rankingBody");
+const historyBody = document.getElementById("historyBody");
+const finalsBox = document.getElementById("finalsBox");
+
+const gameDate = document.getElementById("gameDate");
+const gameType = document.getElementById("gameType");
+
+const p1 = document.getElementById("p1");
+const p2 = document.getElementById("p2");
+
+const s1p1 = document.getElementById("s1p1");
+const s1p2 = document.getElementById("s1p2");
+const s2p1 = document.getElementById("s2p1");
+const s2p2 = document.getElementById("s2p2");
+const tbp1 = document.getElementById("tbp1");
+const tbp2 = document.getElementById("tbp2");
+
+const woWinner = document.getElementById("woWinner");
+const woNote = document.getElementById("woNote");
+
+const normalFields = document.getElementById("normalFields");
+const woFields = document.getElementById("woFields");
+
+const formTitle = document.getElementById("formTitle");
+const actionsHeader = document.getElementById("actionsHeader");
+const saveStatus = document.getElementById("saveStatus");
+
+const loggedOut = document.getElementById("loggedOut");
+const loggedIn = document.getElementById("loggedIn");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const userEmail = document.getElementById("userEmail");
+const authStatus = document.getElementById("authStatus");
+
+function numberOrNull(value) {
+  return value === "" ? null : Number(value);
+}
+
+function formatDate(value) {
+  if (!value) return "";
+  const [y,m,d] = value.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function populatePlayers() {
+  const options = PLAYERS.map(player =>
+    `<option value="${player}">${player}</option>`
+  ).join("");
+
+  p1.innerHTML = options;
+  p2.innerHTML = options;
+
+  if (PLAYERS.length > 1) p2.selectedIndex = 1;
+
+  syncWoWinner();
+}
+
+function syncWoWinner() {
+  woWinner.innerHTML = `
+    <option value="${p1.value}">${p1.value}</option>
+    <option value="${p2.value}">${p2.value}</option>
+  `;
+}
+
+function toggleGameType() {
+  const wo = gameType.value === "wo";
+  normalFields.classList.toggle("hidden", wo);
+  woFields.classList.toggle("hidden", !wo);
+}
+
+function getGameSummary(game) {
+  if (game.tipo === "wo") {
+    const winner = game.vencedor_wo;
+    const loser = winner === game.jogador1 ? game.jogador2 : game.jogador1;
+
+    return {
+      points: { [winner]:1, [loser]:0 },
+      setsWon: { [winner]:1, [loser]:0 },
+      setsLost: { [winner]:0, [loser]:1 },
+      gameBalance: { [winner]:0, [loser]:0 },
+      gamesWon: { [winner]:0, [loser]:0 },
+      result: `W.O. para ${winner}`
+    };
+  }
+
+  let sets1 = 0;
+  let sets2 = 0;
+  let games1 = 0;
+  let games2 = 0;
+
+  const regularSets = [
+    [game.set1_j1, game.set1_j2],
+    [game.set2_j1, game.set2_j2]
+  ];
+
+  regularSets.forEach(([a,b]) => {
+    if (a > b) sets1++;
+    else if (b > a) sets2++;
+
+    games1 += a || 0;
+    games2 += b || 0;
+  });
+
+  if (game.tiebreak_j1 !== null && game.tiebreak_j2 !== null) {
+    if (game.tiebreak_j1 > game.tiebreak_j2) sets1++;
+    else if (game.tiebreak_j2 > game.tiebreak_j1) sets2++;
+  }
+
+  return {
+    points: {
+      [game.jogador1]:sets1,
+      [game.jogador2]:sets2
+    },
+    setsWon: {
+      [game.jogador1]:sets1,
+      [game.jogador2]:sets2
+    },
+    setsLost: {
+      [game.jogador1]:sets2,
+      [game.jogador2]:sets1
+    },
+    gameBalance: {
+      [game.jogador1]:games1-games2,
+      [game.jogador2]:games2-games1
+    },
+    gamesWon: {
+      [game.jogador1]:games1,
+      [game.jogador2]:games2
+    },
+    result:`${sets1}x${sets2}`
+  };
+}
+
+function headToHead(playerA, playerB) {
+  let pointsA = 0;
+  let pointsB = 0;
+
+  games
+    .filter(game =>
+      (game.jogador1 === playerA && game.jogador2 === playerB) ||
+      (game.jogador1 === playerB && game.jogador2 === playerA)
+    )
+    .forEach(game => {
+      const summary = getGameSummary(game);
+      pointsA += summary.points[playerA] || 0;
+      pointsB += summary.points[playerB] || 0;
+    });
+
+  return pointsB - pointsA;
+}
+
+function getRanking() {
+  const stats = {};
+
+  PLAYERS.forEach(player => {
+    stats[player] = {
+      player,
+      games:0,
+      points:0,
+      setsLost:0,
+      setBalance:0,
+      gameBalance:0,
+      gamesWon:0
+    };
+  });
+
+  games.forEach(game => {
+    const summary = getGameSummary(game);
+
+    [game.jogador1, game.jogador2].forEach(player => {
+      stats[player].games++;
+      stats[player].points += summary.points[player] || 0;
+      stats[player].setsLost += summary.setsLost[player] || 0;
+      stats[player].setBalance +=
+        (summary.setsWon[player] || 0) -
+        (summary.setsLost[player] || 0);
+      stats[player].gameBalance += summary.gameBalance[player] || 0;
+      stats[player].gamesWon += summary.gamesWon[player] || 0;
+    });
+  });
+
+  return Object.values(stats).sort((a,b) => {
+    if (b.points !== a.points) return b.points - a.points;
+
+    const direct = headToHead(a.player,b.player);
+    if (direct !== 0) return direct;
+
+    if (b.setBalance !== a.setBalance) return b.setBalance - a.setBalance;
+    if (b.gameBalance !== a.gameBalance) return b.gameBalance - a.gameBalance;
+    if (b.gamesWon !== a.gamesWon) return b.gamesWon - a.gamesWon;
+
+    return a.player.localeCompare(b.player);
+  });
+}
+
+function renderRanking() {
+  const ranking = getRanking();
+
+  rankingBody.innerHTML = ranking.map((player,index) => `
+    <tr>
+      <td>${index+1}</td>
+      <td class="player">${player.player}</td>
+      <td>${player.games}</td>
+      <td class="points">${player.points}</td>
+      <td>${player.setsLost}</td>
+      <td>${player.setBalance}</td>
+      <td>${player.gameBalance}</td>
+      <td>${player.gamesWon}</td>
+    </tr>
+  `).join("");
+}
+
+function renderHistory() {
+  actionsHeader.classList.toggle("hidden", !currentUser);
+
+  if (!games.length) {
+    historyBody.innerHTML =
+      `<tr><td colspan="${currentUser ? 5 : 4}" class="small">Nenhum jogo lançado.</td></tr>`;
+    return;
+  }
+
+  historyBody.innerHTML = games.map(game => {
+    const summary = getGameSummary(game);
+
+    const actions = currentUser
+      ? `<td>
+          <div class="actions">
+            <button onclick="editGame('${game.id}')">Editar</button>
+            <button class="danger" onclick="deleteGame('${game.id}')">Excluir</button>
+          </div>
+         </td>`
+      : "";
+
+    return `
+      <tr>
+        <td>${formatDate(game.data)}</td>
+        <td>${game.jogador1} x ${game.jogador2}</td>
+        <td>${summary.result}</td>
+        <td>
+          ${game.jogador1} ${summary.points[game.jogador1] || 0}
+          •
+          ${game.jogador2} ${summary.points[game.jogador2] || 0}
+        </td>
+        ${actions}
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderFinals() {
+  const ranking = getRanking();
+
+  finalsBox.innerHTML = `
+    <div class="semifinal"><b>Semifinal 1</b><br>${ranking[0].player} (1º) x ${ranking[3].player} (4º)</div>
+    <div class="semifinal"><b>Semifinal 2</b><br>${ranking[1].player} (2º) x ${ranking[2].player} (3º)</div>
+    <div class="semifinal"><b>Disputa de 3º lugar</b><br>Perdedor SF1 x Perdedor SF2</div>
+    <div class="semifinal"><b>Final</b><br>Vencedor SF1 x Vencedor SF2</div>
+  `;
+}
+
+function renderAdmin() {
+  loggedOut.classList.toggle("hidden", !!currentUser);
+  loggedIn.classList.toggle("hidden", !currentUser);
+
+  if (currentUser) userEmail.textContent = currentUser.email || "usuário";
+}
+
+function renderAll() {
+  renderRanking();
+  renderHistory();
+  renderFinals();
+  renderAdmin();
+}
+
+async function loadGames() {
+  const { data, error } = await supabaseClient
+    .from("jogos")
+    .select("*")
+    .order("data", { ascending:false })
+    .order("created_at", { ascending:false });
+
+  if (error) {
+    alert("Erro ao carregar jogos: " + error.message);
+    return;
+  }
+
+  games = data || [];
+  renderAll();
+}
+
+function validateNormalGame(row) {
+  if (
+    row.set1_j1 === null ||
+    row.set1_j2 === null ||
+    row.set2_j1 === null ||
+    row.set2_j2 === null
+  ) {
+    alert("Preencha os dois primeiros sets.");
+    return false;
+  }
+
+  if (
+    row.set1_j1 === row.set1_j2 ||
+    row.set2_j1 === row.set2_j2
+  ) {
+    alert("Um set não pode terminar empatado.");
+    return false;
+  }
+
+  let sets1 = 0;
+  let sets2 = 0;
+
+  if (row.set1_j1 > row.set1_j2) sets1++;
+  else sets2++;
+
+  if (row.set2_j1 > row.set2_j2) sets1++;
+  else sets2++;
+
+  if (sets1 === 2 || sets2 === 2) {
+    row.tiebreak_j1 = null;
+    row.tiebreak_j2 = null;
+    return true;
+  }
+
+  if (row.tiebreak_j1 === null || row.tiebreak_j2 === null) {
+    alert("O jogo está 1x1. Preencha o Match Tiebreak.");
+    return false;
+  }
+
+  if (row.tiebreak_j1 === row.tiebreak_j2) {
+    alert("O Match Tiebreak não pode terminar empatado.");
+    return false;
+  }
+
+  const maior = Math.max(row.tiebreak_j1,row.tiebreak_j2);
+  const diferenca = Math.abs(row.tiebreak_j1-row.tiebreak_j2);
+
+  if (maior < 10 || diferenca < 2) {
+    alert("O Match Tiebreak deve chegar a pelo menos 10 pontos e terminar com diferença mínima de 2.");
+    return false;
+  }
+
+  return true;
+}
+
+async function saveGame() {
+  saveStatus.textContent = "";
+
+  if (p1.value === p2.value) {
+    alert("Escolha jogadores diferentes.");
+    return;
+  }
+
+  if (!gameDate.value) {
+    alert("Informe a data.");
+    return;
+  }
+
+  const row = {
+    data:gameDate.value,
+    tipo:gameType.value,
+    jogador1:p1.value,
+    jogador2:p2.value,
+    set1_j1:null,
+    set1_j2:null,
+    set2_j1:null,
+    set2_j2:null,
+    tiebreak_j1:null,
+    tiebreak_j2:null,
+    vencedor_wo:null,
+    observacao:null
+  };
+
+  if (row.tipo === "wo") {
+    row.vencedor_wo = woWinner.value;
+    row.observacao = woNote.value.trim() || null;
+  } else {
+    row.set1_j1 = numberOrNull(s1p1.value);
+    row.set1_j2 = numberOrNull(s1p2.value);
+    row.set2_j1 = numberOrNull(s2p1.value);
+    row.set2_j2 = numberOrNull(s2p2.value);
+    row.tiebreak_j1 = numberOrNull(tbp1.value);
+    row.tiebreak_j2 = numberOrNull(tbp2.value);
+
+    if (!validateNormalGame(row)) return;
+  }
+
+  let result;
+
+  // NOVO JOGO: PÚBLICO PODE INSERIR, SEM LOGIN.
+  if (!editingId) {
+    result = await supabaseClient
+      .from("jogos")
+      .insert(row);
+  }
+  // EDIÇÃO: SOMENTE ADMINISTRADOR LOGADO.
+  else {
+    if (!currentUser) {
+      alert("Somente o administrador pode editar jogos.");
+      return;
+    }
+
+    result = await supabaseClient
+      .from("jogos")
+      .update(row)
+      .eq("id", editingId);
+  }
+
+  if (result.error) {
+    saveStatus.textContent = "Erro: " + result.error.message;
+    alert("Erro ao salvar: " + result.error.message);
+    return;
+  }
+
+  clearForm();
+  await loadGames();
+
+  saveStatus.textContent = "Jogo salvo com sucesso.";
+  alert("Jogo salvo com sucesso.");
+}
+
+function clearForm() {
+  editingId = null;
+  formTitle.textContent = "Lançar jogo";
+
+  gameType.value = "normal";
+
+  s1p1.value = "";
+  s1p2.value = "";
+  s2p1.value = "";
+  s2p2.value = "";
+  tbp1.value = "";
+  tbp2.value = "";
+  woNote.value = "";
+
+  toggleGameType();
+}
+
+function editGame(id) {
+  if (!currentUser) {
+    alert("Somente o administrador pode editar jogos.");
+    return;
+  }
+
+  const game = games.find(item => item.id === id);
+  if (!game) return;
+
+  editingId = id;
+  formTitle.textContent = "Editar jogo";
+
+  gameDate.value = game.data;
+  gameType.value = game.tipo;
+  p1.value = game.jogador1;
+  p2.value = game.jogador2;
+
+  syncWoWinner();
+  toggleGameType();
+
+  if (game.tipo === "wo") {
+    woWinner.value = game.vencedor_wo;
+    woNote.value = game.observacao || "";
+  } else {
+    s1p1.value = game.set1_j1 ?? "";
+    s1p2.value = game.set1_j2 ?? "";
+    s2p1.value = game.set2_j1 ?? "";
+    s2p2.value = game.set2_j2 ?? "";
+    tbp1.value = game.tiebreak_j1 ?? "";
+    tbp2.value = game.tiebreak_j2 ?? "";
+  }
+
+  document.querySelector('[data-tab="novo-jogo"]').click();
+}
+
+async function deleteGame(id) {
+  if (!currentUser) {
+    alert("Somente o administrador pode excluir jogos.");
+    return;
+  }
+
+  if (!confirm("Excluir este jogo?")) return;
+
+  const { error } = await supabaseClient
+    .from("jogos")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("Erro ao excluir: " + error.message);
+    return;
+  }
+
+  await loadGames();
+}
+
+async function login() {
+  authStatus.textContent = "";
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
+  if (!email || !password) {
+    alert("Informe e-mail e senha.");
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    authStatus.textContent = "Erro: " + error.message;
+    alert("Login não realizado: " + error.message);
+    return;
+  }
+
+  currentUser = data.user;
+  authStatus.textContent = "Login realizado.";
+  renderAll();
+}
+
+async function logout() {
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  authStatus.textContent = "Sessão encerrada.";
+  renderAll();
+}
+
+document.querySelectorAll("nav button").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll("nav button").forEach(item =>
+      item.classList.remove("active")
+    );
+
+    button.classList.add("active");
+
+    document.querySelectorAll("main section").forEach(section =>
+      section.classList.remove("active")
+    );
+
+    document
+      .getElementById(button.dataset.tab)
+      .classList.add("active");
+  });
+});
+
+gameType.addEventListener("change", toggleGameType);
+p1.addEventListener("change", syncWoWinner);
+p2.addEventListener("change", syncWoWinner);
+
+supabaseClient.auth.onAuthStateChange((_event, session) => {
+  currentUser = session?.user || null;
+  renderAll();
+});
+
+async function init() {
+  gameDate.value = new Date().toISOString().slice(0,10);
+
+  populatePlayers();
+  toggleGameType();
+
+  const { data } = await supabaseClient.auth.getSession();
+  currentUser = data.session?.user || null;
+
+  await loadGames();
+}
+
+init();
+</script>
+
+</body>
+</html>
